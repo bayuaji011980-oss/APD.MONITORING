@@ -169,20 +169,24 @@ svg text{font-family:var(--f-mono);font-size:10px;fill:var(--muted)}
   <div class="msg err" id="setupMsg" hidden style="margin-bottom:16px">Dasbor belum tersambung ke Google Sheets. Buka file <b>index.html</b>, isi <b>SCRIPT_URL</b> dengan URL Web App dari Apps Script, lalu upload ulang ke GitHub.</div>
 
   <section class="kpis" aria-label="Ringkasan">
-    <div class="kpi hot"><div class="lbl">Hari ini</div><div class="val" id="kToday">0</div><div class="sub" id="kTodaySub">unit APD ditukar</div></div>
+    <div class="kpi hot"><div class="lbl">Hari ini</div><div class="val" id="kToday">0</div><div class="sub" id="kTodaySub">unit APD keluar</div></div>
     <div class="kpi"><div class="lbl">Bulan ini</div><div class="val" id="kMonth">0</div><div class="sub" id="kMonthSub">unit</div></div>
-    <div class="kpi"><div class="lbl">Paling sering ditukar</div><div class="val" id="kTop" style="font-size:26px;padding-top:5px">–</div><div class="sub" id="kTopSub">bulan ini</div></div>
+    <div class="kpi"><div class="lbl">Paling sering ditukar</div><div class="val" id="kTop" style="font-size:26px;padding-top:5px">–</div><div class="sub" id="kTopSub">bulan ini · tanpa pekerja baru</div></div>
     <div class="kpi"><div class="lbl">Total tercatat</div><div class="val" id="kTotal">0</div><div class="sub" id="kTotalSub">0 pekerja</div></div>
   </section>
 
   <div class="grid">
     <div class="formcol">
       <section class="panel" aria-labelledby="fTitle">
-        <h2 id="fTitle">Catat penukaran APD</h2>
-        <p class="hint">Pilih APD, foto yang lama (rusak) dan yang baru saat diserahkan. Di HP, kotak foto langsung membuka kamera.</p>
+        <h2 id="fTitle">Catat APD</h2>
+        <p class="hint">Pilih jenis catatan dan APD-nya, lalu tambahkan foto. Di HP, kotak foto bisa memotret langsung atau memilih dari galeri.</p>
         <form id="form" novalidate>
-          <div class="fg">APD yang ditukar
+          <div class="fg">Jenis catatan
+            <div class="seg" id="segMode"><label><input type="radio" name="mode" value="tukar" checked><span>Penukaran APD</span></label><label><input type="radio" name="mode" value="baru"><span>Serah terima pekerja baru</span></label></div>
+          </div>
+          <div class="fg"><span id="apdLbl">APD yang ditukar</span>
             <div class="seg apd" id="segApd"></div>
+            <span class="opt" id="apdHintForm" hidden>Centang semua APD yang diserahkan ke pekerja baru.</span>
           </div>
           <label class="f" id="wrapLain" hidden>Nama APD<input type="text" id="fApdLain" list="apdLainList" autocomplete="off" placeholder="mis. Face shield, Full body harness"></label>
           <datalist id="apdLainList"></datalist>
@@ -200,7 +204,7 @@ svg text{font-family:var(--f-mono);font-size:10px;fill:var(--muted)}
             <label class="f">Area kerja<input type="text" id="fArea" list="areaList" autocomplete="off" placeholder="mis. Jetty / Tank"></label>
           </div>
           <datalist id="jabList"></datalist><datalist id="areaList"></datalist>
-          <div class="fg">Alasan penukaran
+          <div class="fg" id="wrapAlasan">Alasan penukaran
             <div class="seg" id="segAlasan"></div>
           </div>
           <div class="row2">
@@ -211,8 +215,8 @@ svg text{font-family:var(--f-mono);font-size:10px;fill:var(--muted)}
           <label class="f">Diserahkan oleh<input type="text" id="fOleh" list="olehList" autocomplete="off" placeholder="Petugas HSE / logistik"></label>
           <datalist id="olehList"></datalist>
           <div class="photos">
-            <label class="shot req" id="shotLama"><input type="file" accept="image/*" capture="environment" id="pLama" aria-label="Foto APD lama"><span><span class="cam">Foto lama</span><span id="lamaSub">APD rusak</span></span></label>
-            <label class="shot" id="shotBaru"><input type="file" accept="image/*" capture="environment" id="pBaru" aria-label="Foto serah terima APD baru"><span><span class="cam">Foto baru</span>serah terima</span></label>
+            <label class="shot req" id="shotLama"><input type="file" accept="image/*" id="pLama" aria-label="Foto APD lama"><span><span class="cam">Foto lama</span><span id="lamaSub">APD rusak</span></span></label>
+            <label class="shot" id="shotBaru"><input type="file" accept="image/*" id="pBaru" aria-label="Foto serah terima APD baru"><span><span class="cam">Foto baru</span><span id="baruSub">serah terima</span></span></label>
           </div>
           <label class="f">Catatan <span class="opt">(opsional)</span><textarea id="fCatatan" placeholder="mis. sol lepas saat kerja di area basah"></textarea></label>
           <label class="f" id="wrapPin" hidden>PIN pengisi<input type="password" id="fPin" inputmode="numeric" autocomplete="off" placeholder="PIN dari HSE"></label>
@@ -233,7 +237,7 @@ svg text{font-family:var(--f-mono);font-size:10px;fill:var(--muted)}
 
       <div class="two">
         <section class="panel">
-          <h2>Per jenis APD</h2>
+          <h2>APD paling sering ditukar</h2>
           <p class="hint" id="apdHint">Bulan berjalan</p>
           <div class="bars" id="apdBars"></div>
         </section>
@@ -249,6 +253,7 @@ svg text{font-family:var(--f-mono);font-size:10px;fill:var(--muted)}
           <div><h2>Catatan harian</h2><p class="hint" style="margin:0" id="logHint">Semua penukaran, terbaru di atas</p></div>
           <div class="filters">
             <input type="month" id="flMonth" aria-label="Pilih bulan">
+            <select id="flJenis" aria-label="Jenis catatan" style="width:auto"><option value="">Semua catatan</option><option value="tukar">Penukaran</option><option value="baru">Serah terima pekerja baru</option></select>
             <input type="search" id="flQ" placeholder="Cari nama / area" aria-label="Cari">
             <button class="btn sm" id="btnCsv" type="button" hidden>Unduh rekap CSV</button>
           </div>
@@ -279,31 +284,37 @@ svg text{font-family:var(--f-mono);font-size:10px;fill:var(--muted)}
   /* ---------- katalog APD ---------- */
   const APD = [
     { k:"Kacamata", group:"Kacamata", jenis:["Clear","Dark / Smoke","Goggle","Grinding"],
-      alasan:["Tergores / buram","Lensa retak / pecah","Frame / tangkai patah","Rusak","Hilang","Karyawan baru","Lainnya"] },
+      alasan:["Tergores / buram","Lensa retak / pecah","Frame / tangkai patah","Rusak","Hilang","Lainnya"] },
     { k:"Sepatu safety", group:"Sepatu safety", jenis:["Low cut","High cut / boots","Sepatu karet (PVC)"],
       ukuran:{hint:"(nomor)",list:["38","39","40","41","42","43","44","45","46"]},
-      alasan:["Sol lepas / aus","Sobek / jebol","Steel toe rusak","Rusak","Ukuran tidak sesuai","Hilang","Karyawan baru","Lainnya"] },
+      alasan:["Sol lepas / aus","Sobek / jebol","Steel toe rusak","Rusak","Ukuran tidak sesuai","Hilang","Lainnya"] },
     { k:"Helm", group:"Helm", jenis:["Putih","Kuning","Biru","Merah","Hijau","Oranye"],
-      alasan:["Retak / pecah","Suspensi / headband rusak","Chin strap rusak","Rusak","Kadaluarsa","Hilang","Karyawan baru","Lainnya"] },
+      alasan:["Retak / pecah","Suspensi / headband rusak","Chin strap rusak","Rusak","Kadaluarsa","Hilang","Lainnya"] },
     { k:"Sarung tangan", group:"Sarung tangan", jenis:["Katun","Kulit","Cut resistant","Karet / nitril","Tahan panas","Las (welding)"],
       ukuran:{hint:"(S–XL)",list:["S","M","L","XL"]},
-      alasan:["Sobek / bolong","Aus / licin","Terkontaminasi bahan kimia","Ukuran tidak sesuai","Hilang","Karyawan baru","Lainnya"] },
+      alasan:["Sobek / bolong","Aus / licin","Terkontaminasi bahan kimia","Ukuran tidak sesuai","Hilang","Lainnya"] },
     { k:"Masker", group:"Lainnya", jenis:["Masker kain","N95","Half face respirator","Filter / cartridge"],
-      alasan:["Kotor / habis pakai","Rusak","Filter jenuh","Hilang","Karyawan baru","Lainnya"] },
+      alasan:["Kotor / habis pakai","Rusak","Filter jenuh","Hilang","Lainnya"] },
     { k:"Ear plug", group:"Lainnya", jenis:["Ear plug","Ear muff"],
-      alasan:["Kotor / habis pakai","Rusak","Hilang","Karyawan baru","Lainnya"] },
+      alasan:["Kotor / habis pakai","Rusak","Hilang","Lainnya"] },
     { k:"Rompi", group:"Lainnya", jenis:["Rompi reflektif"], ukuran:{hint:"(S–XXL)",list:["S","M","L","XL","XXL"]},
-      alasan:["Sobek","Reflektor pudar","Hilang","Ukuran tidak sesuai","Karyawan baru","Lainnya"] },
+      alasan:["Sobek","Reflektor pudar","Hilang","Ukuran tidak sesuai","Lainnya"] },
+    { k:"Workvest", group:"Lainnya", jenis:["Workvest"], ukuran:{hint:"(S–XXL)",list:["S","M","L","XL","XXL"]},
+      alasan:["Sobek","Reflektor pudar","Kotor permanen","Ukuran tidak sesuai","Hilang","Lainnya"] },
     { k:"Coverall", group:"Lainnya", jenis:["Coverall","Baju Wearpack"], ukuran:{hint:"(S–XXL)",list:["S","M","L","XL","XXL"]},
-      alasan:["Sobek","Kotor permanen","Ukuran tidak sesuai","Hilang","Karyawan baru","Lainnya"] },
+      alasan:["Sobek","Kotor permanen","Ukuran tidak sesuai","Hilang","Lainnya"] },
     { k:"Lainnya", group:"Lainnya", jenis:[], free:true,
-      alasan:["Rusak","Aus","Hilang","Kadaluarsa","Karyawan baru","Lainnya"] }
+      alasan:["Rusak","Aus","Hilang","Kadaluarsa","Lainnya"] }
   ];
   const GROUPS = [
     {k:"Kacamata",c:"var(--c-kacamata)"},{k:"Sepatu safety",c:"var(--c-sepatu)"},{k:"Helm",c:"var(--c-helm)"},
     {k:"Sarung tangan",c:"var(--c-sarung)"},{k:"Lainnya",c:"var(--c-lain)"}
   ];
   const apdOf = r => r.apd || "Kacamata";
+  const ALASAN_BARU = "Serah terima pekerja baru";
+  const isBaru = r => /karyawan baru|pekerja baru|belum dapat/i.test(String(r.alasan||""));
+  const alasanOf = r => isBaru(r) ? ALASAN_BARU : r.alasan;
+  const BARU_DEFAULT = ["Helm","Sepatu safety","Kacamata","Workvest"];
   const groupOf = name => { const a=APD.find(x=>x.k===name); return a?a.group:"Lainnya"; };
   const recGroup = r => r.apd ? (r.apd_kat ? groupOf(r.apd_kat) : groupOf(r.apd)) : "Kacamata";
   const colorOf = g => (GROUPS.find(x=>x.k===g)||GROUPS[4]).c;
@@ -351,16 +362,40 @@ svg text{font-family:var(--f-mono);font-size:10px;fill:var(--muted)}
       const sig=JSON.stringify(j.data);
       const t=new Date(); const jam=pad(t.getHours())+":"+pad(t.getMinutes());
       setConn("on","Tersambung · "+j.data.length+" laporan · "+jam);
-      if(sig!==lastSig){ lastSig=sig; records=j.data.map(r=>Object.assign({_id:String(r.id)},r)); renderAll(); }
+      if(sig!==lastSig){ lastSig=sig; records=j.data.map(r=>Object.assign({_id:String(r.id)},r)); renderAll(); lsSet("apd_cache",sig); }
     }catch(e){
       setConn("off","Gagal memuat data. Mencoba lagi…");
     }finally{ loading=false; }
   }
 
   /* ---------- form APD dinamis ---------- */
-  $("segApd").innerHTML = APD.map((a,i)=>`<label><input type="radio" name="apd" value="${esc(a.k)}"${i===0?" checked":""}><span class="dot" style="background:${colorOf(a.group)}"></span><span>${esc(a.k)}</span></label>`).join("");
+  const modeOf = () => (document.querySelector('input[name=mode]:checked')||{}).value==="baru" ? "baru" : "tukar";
+  function renderApdSeg(){
+    const baru=modeOf()==="baru";
+    $("segApd").innerHTML = APD.map((a,i)=>`<label><input type="${baru?"checkbox":"radio"}" name="apd" value="${esc(a.k)}"${(baru?BARU_DEFAULT.includes(a.k):i===0)?" checked":""}><span class="dot" style="background:${colorOf(a.group)}"></span><span>${esc(a.k)}</span></label>`).join("");
+  }
   function curApd(){ const v=(document.querySelector('input[name=apd]:checked')||{}).value; return APD.find(a=>a.k===v)||APD[0]; }
+  const selectedApds = () => [...document.querySelectorAll('input[name=apd]:checked')].map(i=>APD.find(a=>a.k===i.value)).filter(Boolean);
   function syncApd(){
+    const baru=modeOf()==="baru";
+    $("apdLbl").textContent = baru ? "APD yang diserahkan" : "APD yang ditukar";
+    $("apdHintForm").hidden=!baru;
+    $("wrapAlasan").hidden=baru;
+    $("shotLama").hidden=baru;
+    $("shotBaru").classList.toggle("req",baru);
+    $("baruSub").textContent = baru ? "pekerja menerima APD" : "serah terima";
+    $("shotBaru").querySelector(".cam").textContent = baru ? "Foto serah terima" : "Foto baru";
+    $("fJumlah").closest("label").hidden = baru;
+    $("fSubmit").textContent = baru ? "Simpan serah terima" : "Simpan laporan";
+    if(baru){
+      const sel=selectedApds();
+      $("wrapLain").hidden=!sel.some(a=>a.free);
+      $("wrapJenis").hidden=true;
+      $("ukuranHint").textContent="(opsional)";
+      $("fUkuran").placeholder="mis. sepatu 42, workvest L";
+      $("ukuranList").innerHTML="";
+      return;
+    }
     const a=curApd();
     $("wrapLain").hidden=!a.free;
     $("wrapJenis").hidden=!a.jenis.length;
@@ -373,6 +408,8 @@ svg text{font-family:var(--f-mono);font-size:10px;fill:var(--muted)}
     $("fUkuran").value="";
   }
   $("segApd").addEventListener("change",syncApd);
+  $("segMode").addEventListener("change",()=>{ renderApdSeg(); syncApd(); $("fMsg").hidden=true; });
+  renderApdSeg();
   syncApd();
 
   /* ---------- foto ---------- */
@@ -410,37 +447,51 @@ svg text{font-family:var(--f-mono);font-size:10px;fill:var(--muted)}
   $("form").addEventListener("submit",async ev=>{
     ev.preventDefault();
     if(!CONFIGURED){ showMsg("err","Dasbor belum disambungkan ke Google Sheets (SCRIPT_URL belum diisi)."); return; }
-    const a=curApd();
-    const apdName = a.free ? $("fApdLain").value.trim() : a.k;
+    const baru=modeOf()==="baru";
     const nama=$("fNama").value.trim();
-    const alasan=(document.querySelector('input[name=alasan]:checked')||{}).value;
     const pin=$("fPin").value.trim();
-    if(!apdName){ showMsg("err","Tulis nama APD-nya."); $("fApdLain").focus(); return; }
+    const lain=$("fApdLain").value.trim();
+    let apds, alasan;
+    if(baru){
+      apds=selectedApds();
+      if(!apds.length){ showMsg("err","Centang minimal satu APD yang diserahkan."); return; }
+      alasan=ALASAN_BARU;
+    }else{
+      apds=[curApd()];
+      alasan=(document.querySelector('input[name=alasan]:checked')||{}).value;
+    }
+    if(apds.some(a=>a.free) && !lain){ showMsg("err","Tulis nama APD lainnya."); $("fApdLain").focus(); return; }
     if(!nama){ showMsg("err","Isi nama pekerja."); $("fNama").focus(); return; }
     if(!alasan){ showMsg("err","Pilih alasan penukaran."); return; }
-    if(!photos.lama){ showMsg("err","Ambil foto APD lama sebagai bukti."); return; }
+    if(!baru && !photos.lama){ showMsg("err","Tambahkan foto APD lama sebagai bukti."); return; }
+    if(baru && !photos.baru){ showMsg("err","Tambahkan foto serah terima APD ke pekerja baru."); return; }
     if(PAKAI_PIN_ISI && !pin){ showMsg("err","Masukkan PIN pengisi."); $("fPin").focus(); return; }
-    const btn=$("fSubmit"); btn.disabled=true; btn.textContent="Menyimpan…"; $("fMsg").hidden=true;
+    const btn=$("fSubmit"); const btnTxt=btn.textContent; btn.disabled=true; btn.textContent="Menyimpan…"; $("fMsg").hidden=true;
     try{
       const tgl=$("fTgl").value||todayStr, jam=$("fJam").value||"";
-      const stamp=apdName+" · "+nama+" · "+tgl+" "+jam;
       const oleh=$("fOleh").value.trim();
-      const rec={ tgl, jam, apd:apdName, apd_kat:a.k, nama, jabatan:$("fJabatan").value.trim(), area:$("fArea").value.trim(),
-        jenis:(document.querySelector('input[name=jenis]:checked')||{}).value||"", ukuran:$("fUkuran").value.trim(), alasan,
-        jumlah:Math.max(1,parseInt($("fJumlah").value,10)||1), oleh, catatan:$("fCatatan").value.trim() };
-      const j=await api("add",{ pin, record:rec,
-        foto_lama:photoData(photos.lama,stamp+" · LAMA"), foto_baru:photoData(photos.baru,stamp+" · BARU") });
+      const names=apds.map(a=>a.free?lain:a.k);
+      const stamp=(baru?"Serah terima":names[0])+" · "+nama+" · "+tgl+" "+jam;
+      const common={ tgl, jam, nama, jabatan:$("fJabatan").value.trim(), area:$("fArea").value.trim(),
+        ukuran:$("fUkuran").value.trim(), alasan, jumlah:baru?1:Math.max(1,parseInt($("fJumlah").value,10)||1), oleh, catatan:$("fCatatan").value.trim() };
+      const recs=apds.map((a,i)=>Object.assign({},common,{ apd:names[i], apd_kat:a.k,
+        jenis: baru ? "" : ((document.querySelector('input[name=jenis]:checked')||{}).value||"") }));
+      const j=await api("add",{ pin, records:recs, record:recs[0],
+        foto_lama: baru ? "" : photoData(photos.lama,stamp+" · LAMA"),
+        foto_baru: photoData(photos.baru,stamp+(baru?" · SERAH TERIMA":" · BARU")) });
       if(oleh) lsSet("tk_oleh",oleh);
       if(PAKAI_PIN_ISI) lsSet("tk_pin",pin);
-      if(j.record){ records.push(Object.assign({_id:String(j.record.id)},j.record)); lastSig=""; renderAll(); }
+      const saved=j.records||(j.record?[j.record]:[]);
+      saved.forEach(r=>records.push(Object.assign({_id:String(r.id)},r))); if(saved.length){ lastSig=""; renderAll(); }
       ["fNama","fJabatan","fArea","fCatatan","fUkuran","fApdLain"].forEach(i=>$(i).value=""); $("fJumlah").value=1;
       document.querySelectorAll('input[name=alasan]').forEach(r=>r.checked=false);
       clearShot("lama","pLama","shotLama"); clearShot("baru","pBaru","shotBaru"); resetDateTime();
-      showMsg("ok","Tersimpan: "+apdName+" untuk "+nama+" ("+alasan+").");
+      renderApdSeg(); syncApd();
+      showMsg("ok", baru ? "Tersimpan: serah terima "+names.join(", ")+" untuk "+nama+"." : "Tersimpan: "+names[0]+" untuk "+nama+" ("+alasan+").");
       load();
     }catch(e){
       showMsg("err", e.code==="pin" ? "PIN pengisi salah." : (e&&e.message) ? "Gagal menyimpan: "+e.message : "Gagal menyimpan. Cek sinyal lalu coba lagi.");
-    }finally{ btn.disabled=false; btn.textContent="Simpan laporan"; }
+    }finally{ btn.disabled=false; btn.textContent=btnTxt; syncApd(); }
   });
 
   /* ---------- render ---------- */
@@ -450,11 +501,11 @@ svg text{font-family:var(--f-mono);font-size:10px;fill:var(--muted)}
   function renderKpis(){
     const t=records.filter(r=>r.tgl===todayStr), m=records.filter(r=>String(r.tgl||"").startsWith(monthStr));
     $("kToday").textContent=sumJ(t);
-    const tTop=countBy(t,apdOf).slice(0,2).map(([k,v])=>v+" "+k.toLowerCase()).join(", ");
-    $("kTodaySub").textContent=t.length? tTop : "belum ada penukaran";
-    $("kMonth").textContent=sumJ(m); $("kMonthSub").textContent=BULAN_P[now.getMonth()]+" "+now.getFullYear()+" · "+m.length+" laporan";
+    const split=l=>{ const b=sumJ(l.filter(isBaru)), x=sumJ(l)-b; return x+" tukar · "+b+" serah terima baru"; };
+    $("kTodaySub").textContent=t.length? split(t) : "belum ada catatan";
+    $("kMonth").textContent=sumJ(m); $("kMonthSub").textContent=BULAN[now.getMonth()]+" "+now.getFullYear()+" · "+split(m);
     $("kTotal").textContent=sumJ(records); $("kTotalSub").textContent=new Set(records.map(r=>String(r.nama||"").toLowerCase())).size+" pekerja";
-    const top=countBy(m,apdOf)[0]; $("kTop").textContent=top?top[0]:"–"; $("kTopSub").textContent=top?top[1]+" unit bulan ini":"belum ada data bulan ini";
+    const top=countBy(m.filter(r=>!isBaru(r)),apdOf)[0]; $("kTop").textContent=top?top[0]:"–"; $("kTopSub").textContent=top?top[1]+" unit ditukar bulan ini":"belum ada penukaran bulan ini";
   }
 
   function renderChart(){
@@ -487,7 +538,8 @@ svg text{font-family:var(--f-mono);font-size:10px;fill:var(--muted)}
 
   function baseFiltered(){
     const mo=$("flMonth").value, q=$("flQ").value.trim().toLowerCase();
-    return records.filter(r=>(!mo||String(r.tgl||"").startsWith(mo)) && (!q || [r.nama,r.area,r.jabatan,r.alasan,apdOf(r),r.jenis].join(" ").toLowerCase().includes(q)));
+    const jn=$("flJenis").value;
+    return records.filter(r=>(!mo||String(r.tgl||"").startsWith(mo)) && (!jn || (jn==="baru")===isBaru(r)) && (!q || [r.nama,r.area,r.jabatan,alasanOf(r),apdOf(r),r.jenis].join(" ").toLowerCase().includes(q)));
   }
   const filtered = () => baseFiltered().filter(r=>tabGroup==="Semua"||recGroup(r)===tabGroup);
 
@@ -503,12 +555,13 @@ svg text{font-family:var(--f-mono);font-size:10px;fill:var(--muted)}
     const base=baseFiltered(), list=filtered(); const mo=$("flMonth").value;
     const moLbl= mo ? BULAN_P[Number(mo.slice(5))-1]+" "+mo.slice(0,4) : "semua bulan";
     $("logHint").textContent = list.length+" laporan · "+sumJ(list)+" unit · "+moLbl+(tabGroup!=="Semua"?" · "+tabGroup:"");
-    $("apdHint").textContent = moLbl;
+    $("apdHint").textContent = moLbl+" · tanpa serah terima pekerja baru";
     $("alasanHint").textContent = moLbl+(tabGroup!=="Semua"?" · "+tabGroup:"");
-    renderBars("apdBars",countBy(base,apdOf),"Belum ada penukaran pada periode ini.",true);
-    renderBars("alasanBars",countBy(list,r=>r.alasan),"Belum ada penukaran pada periode ini.",false);
+    renderBars("apdBars",countBy(base.filter(r=>!isBaru(r)),apdOf),"Belum ada penukaran pada periode ini.",true);
+    renderBars("alasanBars",countBy(list.filter(r=>!isBaru(r)),r=>r.alasan),"Belum ada penukaran pada periode ini.",false);
+    const nb=sumJ(list.filter(isBaru)); if(nb) $("alasanBars").insertAdjacentHTML("beforeend",`<div class="empty-s" style="margin-top:4px">Tidak termasuk ${nb} unit serah terima pekerja baru.</div>`);
     if(!list.length){
-      $("log").innerHTML=`<div class="empty"><svg viewBox="0 0 72 40" aria-hidden="true"><path d="M8 30c0-14 12-24 28-24s28 10 28 24M4 30h64M36 6v8" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round"/></svg><b>${records.length?"Tidak ada yang cocok":"Belum ada penukaran APD tercatat"}</b><span>${records.length?"Ubah bulan, jenis APD, atau kata pencarian.":"Isi form <em>Catat penukaran APD</em>, ambil foto APD lama, lalu simpan. Setiap laporan muncul di sini per tanggal."}</span></div>`;
+      $("log").innerHTML=`<div class="empty"><svg viewBox="0 0 72 40" aria-hidden="true"><path d="M8 30c0-14 12-24 28-24s28 10 28 24M4 30h64M36 6v8" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round"/></svg><b>${records.length?"Tidak ada yang cocok":"Belum ada penukaran APD tercatat"}</b><span>${records.length?"Ubah bulan, jenis APD, atau kata pencarian.":"Isi form <em>Catat APD</em>, tambahkan foto, lalu simpan. Setiap laporan muncul di sini per tanggal."}</span></div>`;
       return;
     }
     const byDay={}; list.forEach(r=>{(byDay[r.tgl]=byDay[r.tgl]||[]).push(r);});
@@ -526,7 +579,7 @@ svg text{font-family:var(--f-mono);font-size:10px;fill:var(--muted)}
           <div style="min-width:0"><div style="margin-bottom:3px"><span class="apdtag"><span class="dot" style="background:${colorOf(recGroup(r))}"></span>${esc(apdOf(r))}${Number(r.jumlah)>1?` ×${Number(r.jumlah)}`:""}</span>${det?`<span class="meta">${det}</span>`:""}</div>
           <div class="who">${esc(r.nama)}</div>
           <div class="meta">${[r.jabatan,r.area].filter(Boolean).map(esc).join(" · ")||"&nbsp;"}</div>
-          <div style="margin-top:4px"><span class="pill">${esc(r.alasan)}</span></div>
+          <div style="margin-top:4px"><span class="pill${isBaru(r)?" alt":""}">${esc(alasanOf(r))}</span></div>
           ${r.catatan?`<div class="meta" style="margin-top:4px">${esc(r.catatan)}</div>`:""}
           ${r.oleh?`<div class="meta">Diserahkan: ${esc(r.oleh)}</div>`:""}</div>
           <div class="time">${esc(r.jam||"")}<span style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">${delBtn}</span></div></div>`;
@@ -543,6 +596,7 @@ svg text{font-family:var(--f-mono);font-size:10px;fill:var(--muted)}
 
   $("flMonth").addEventListener("change",renderLog);
   $("flQ").addEventListener("input",renderLog);
+  $("flJenis").addEventListener("change",renderLog);
 
   $("fNama").addEventListener("change",()=>{
     const n=$("fNama").value.trim().toLowerCase(); if(!n) return;
@@ -577,9 +631,9 @@ svg text{font-family:var(--f-mono);font-size:10px;fill:var(--muted)}
   $("btnCsv").addEventListener("click",()=>{
     const list=filtered().slice().sort((a,b)=>(String(a.tgl)+(a.jam||"")).localeCompare(String(b.tgl)+(b.jam||"")));
     const q=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
-    const head=["No","Tanggal","Hari","Jam","APD","Jenis / Tipe","Ukuran","Jumlah","Nama","Jabatan","Area","Alasan","Diserahkan Oleh","Catatan","Foto Lama","Foto Baru"];
+    const head=["No","Tanggal","Hari","Jam","Jenis Catatan","APD","Jenis / Tipe","Ukuran","Jumlah","Nama","Jabatan","Area","Alasan","Diserahkan Oleh","Catatan","Foto Lama","Foto Baru"];
     const rows=list.map((r,i)=>{ const [y,m,d]=String(r.tgl).split("-").map(Number);
-      return [i+1,pad(d)+"/"+pad(m)+"/"+y,HARI[new Date(y,m-1,d).getDay()],r.jam,apdOf(r),r.jenis,r.ukuran,r.jumlah||1,r.nama,r.jabatan,r.area,r.alasan,r.oleh,r.catatan,r.foto_lama||"-",r.foto_baru||"-"].map(q).join(";"); });
+      return [i+1,pad(d)+"/"+pad(m)+"/"+y,HARI[new Date(y,m-1,d).getDay()],r.jam,isBaru(r)?"Serah terima pekerja baru":"Penukaran",apdOf(r),r.jenis,r.ukuran,r.jumlah||1,r.nama,r.jabatan,r.area,alasanOf(r),r.oleh,r.catatan,r.foto_lama||"-",r.foto_baru||"-"].map(q).join(";"); });
     const csv="﻿sep=;\n"+head.map(q).join(";")+"\n"+rows.join("\n");
     const mo=$("flMonth").value||"semua"; const g=tabGroup==="Semua"?"":"_"+tabGroup.replace(/\s+/g,"_");
     const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
@@ -593,7 +647,8 @@ svg text{font-family:var(--f-mono);font-size:10px;fill:var(--muted)}
     $("setupMsg").hidden=false;
     return;
   }
-  setConn("","Memuat data…");
+  { const c=lsGet("apd_cache"); if(c){ try{ records=JSON.parse(c).map(r=>Object.assign({_id:String(r.id)},r)); renderAll(); }catch(e){} } }
+  setConn("",records.length?"Memperbarui data… ("+records.length+" laporan tersimpan)":"Memuat data… (pertama kali bisa ±30 detik)");
   load();
   setInterval(()=>{ if(!document.hidden) load(); },POLL_MS);
   document.addEventListener("visibilitychange",()=>{ if(!document.hidden) load(); });
